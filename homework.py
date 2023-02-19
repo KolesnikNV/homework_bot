@@ -112,7 +112,6 @@ def parse_status(homework) -> str:
 
 def main():
     """Основная логика работы бота."""
-
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     timestamp = int(time.time())
     cache_message = ""
