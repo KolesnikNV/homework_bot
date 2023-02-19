@@ -10,8 +10,10 @@ import telegram
 from dotenv import load_dotenv
 from telegram.error import TelegramError
 
-from exceptions import (EndpointException, ParseStatusException,
-                        SendMessageException)
+from exceptions import (
+    EndpointException,
+    ParseStatusException,
+)
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -45,17 +47,18 @@ HOMEWORK_VERDICTS = {
 
 def check_tokens() -> bool:
     """Проверяет доступность переменных окружения."""
-    return PRACTICUM_TOKEN and TELEGRAM_TOKEN and TELEGRAM_CHAT_ID
+    return all([PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID])
 
 
 def send_message(bot, message):
     """Бот отправляет сообщение о статусе домашней работы."""
     try:
+        logger.debug("Начало отправки статуса в telegram")
         bot.send_message(TELEGRAM_CHAT_ID, message)
-        logger.debug(f"Сообщение в чат {TELEGRAM_CHAT_ID}: {message}")
     except TelegramError as error:
-        logger.error("Ошибка отправки сообщения в телеграм")
-        raise SendMessageException(f"Ошибка {error}")
+        raise TelegramError(f"Ошибка отправки статуса в telegram: {error}")
+    else:
+        logger.debug("Статус отправлен в telegram")
 
 
 def get_api_answer(timestamp):
@@ -69,27 +72,22 @@ def get_api_answer(timestamp):
 
     if response.status_code != HTTPStatus.OK:
         status_code = response.status_code
-        logging.error(f"Ошибка {status_code}.")
         raise EndpointException(f"Ошибка {status_code}")
     try:
         return response.json()
     except requests.RequestException:
-        logger.error("Ошибка парсинга ответа из формата json")
         raise ParseStatusException("Ошибка парсинга ответа из формата json")
 
 
 def check_response(response) -> list:
     """Проверяет ответ API на соответствие документации."""
     if not isinstance(response, dict):
-        logger.error("Ответ API не словарь")
         raise TypeError("Ответ API не словарь")
     try:
         homeworks = response["homeworks"]
     except KeyError:
-        logger.error("Данные приходят не в виде словаря")
         raise KeyError("Данные приходят не в виде словаря")
     if not isinstance(homeworks, list):
-        logger.error("Данные приходят не в виде списка")
         raise TypeError("Данные приходят не в виде списка")
     return homeworks
 
@@ -114,12 +112,6 @@ def parse_status(homework) -> str:
 
 def main():
     """Основная логика работы бота."""
-    logging.basicConfig(
-        level=logging.DEBUG,
-        filename="main.log",
-        format="%(funcName)s, %(lineno)s, %(levelname)s, %(message)s",
-        filemode="w",
-    )
 
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     timestamp = int(time.time())
@@ -133,17 +125,15 @@ def main():
             response = get_api_answer(timestamp)
             homeworks = check_response(response)
             if homeworks:
-                for homework in homeworks:
-                    message = parse_status(homework)
+                message = parse_status(homeworks[0])
+                send_message(bot, message)
+                timestamp = response.get("current_date")
+                if message != cache_message:
                     send_message(bot, message)
+                    cache_message = message
                     timestamp = int(time.time())
-                    if message != cache_message:
-                        send_message(bot, message)
-                        cache_message = message
-                        timestamp = int(time.time())
             else:
                 logger.debug("Отсутствует новая информация")
-            time.sleep(RETRY_PERIOD)
 
         except Exception as error:
             logger.error(error)
@@ -152,7 +142,15 @@ def main():
                 send_message(bot, message_t)
                 error_message = message_t
             time.sleep(RETRY_PERIOD)
+        finally:
+            time.sleep(RETRY_PERIOD)
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.DEBUG,
+        filename="main.log",
+        format="%(funcName)s, %(lineno)s, %(levelname)s, %(message)s",
+        filemode="w",
+    )
     main()
