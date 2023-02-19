@@ -1,3 +1,9 @@
+class SendMessageException(Exception):
+    """Кастомная ошибка."""
+
+    pass
+
+
 class ErrorException(Exception):
     """Кастомная ошибка."""
 
