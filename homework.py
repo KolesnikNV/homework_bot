@@ -13,6 +13,7 @@ from telegram.error import TelegramError
 from exceptions import (
     EndpointException,
     ParseStatusException,
+    SendMessageException,
 )
 
 load_dotenv()
@@ -53,10 +54,11 @@ def check_tokens() -> bool:
 def send_message(bot, message):
     """Бот отправляет сообщение о статусе домашней работы."""
     try:
-        logger.debug("Начало отправки статуса в telegram")
         bot.send_message(TELEGRAM_CHAT_ID, message)
+        logger.debug(f"Сообщение в чат {TELEGRAM_CHAT_ID}: {message}")
     except TelegramError as error:
-        raise TelegramError(f"Ошибка отправки статуса в telegram: {error}")
+        logger.error("Ошибка отправки сообщения в телеграм")
+        raise SendMessageException(f"Ошибка {error}")
     else:
         logger.debug("Статус отправлен в telegram")
 
