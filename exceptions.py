@@ -1,5 +1,5 @@
 class SendMessageException(Exception):
-    """Кастомная ошибка."""
+    """Кастомная ошибка для отправки сообщения."""
 
     pass
 
