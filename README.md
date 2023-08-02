@@ -1,6 +1,6 @@
-![Python](https://img.shields.io/badge/Python-язык%20программирования-blue)
-![logging](https://img.shields.io/badge/Логирование-присутствует-blueviolet)
-![Telegram](https://img.shields.io/badge/Telegram-интеграция-blue)
+![Python](https://img.shields.io/badge/Python-blue)
+![logging](https://img.shields.io/badge/Logging-blueviolet)
+![Telegram](https://img.shields.io/badge/Telegram-Integration-blue)
 
 # homework_bot
 Этот проект представляет собой бота для Telegram, который проверяет статус домашней работы на платформе "Практикум.Домашка". Бот умеет получать информацию о статусе проверки последней домашней работы и отправлять уведомление в чат Telegram, когда статус изменяется.
